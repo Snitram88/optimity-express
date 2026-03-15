@@ -1,11 +1,14 @@
+import { CategoryExplorer } from "@/components/categories/category-explorer";
 import { CategoryCard } from "@/components/cards/category-card";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SearchBar } from "@/components/ui/search-bar";
 import { getCategories } from "@/services/categories/get-categories";
+import { getExplorerCategories } from "@/services/categories/get-explorer-categories";
 
 export default async function HomePage() {
   const categories = await getCategories();
+  const explorerCategories = await getExplorerCategories();
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900">
@@ -56,6 +59,31 @@ export default async function HomePage() {
               </div>
             </div>
           </div>
+        </PageContainer>
+      </section>
+
+      <section className="py-16">
+        <PageContainer>
+          <div className="mb-6">
+            <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+              Browse
+            </span>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
+              Browse all categories
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+              Discover recommended listings and explore deeper subcategories
+              inside each main category.
+            </p>
+          </div>
+
+          {explorerCategories.length > 0 ? (
+            <CategoryExplorer categories={explorerCategories} />
+          ) : (
+            <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600">
+              No active categories available for browsing yet.
+            </div>
+          )}
         </PageContainer>
       </section>
 
