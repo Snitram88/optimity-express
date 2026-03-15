@@ -28,17 +28,26 @@ export function SiteHeader() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <button className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:inline-flex">
-              Lagos
-            </button>
+            <Link
+              href="/#category-explorer"
+              className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:inline-flex"
+            >
+              Browse
+            </Link>
 
-            <button className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex">
+            <Link
+              href="/vendors/login"
+              className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
+            >
               Vendor Login
-            </button>
+            </Link>
 
-            <button className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600">
+            <Link
+              href="/vendors/apply"
+              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600"
+            >
               Join as Vendor
-            </button>
+            </Link>
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CategoryExplorer } from "@/components/categories/category-explorer";
 import { CategoryCard } from "@/components/cards/category-card";
 import { PageContainer } from "@/components/layout/page-container";
@@ -36,12 +37,19 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <button className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600">
+              <Link
+                href="/#category-explorer"
+                className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600"
+              >
                 Browse Categories
-              </button>
-              <button className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50">
+              </Link>
+
+              <Link
+                href="/vendors/apply"
+                className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+              >
                 Join as Vendor
-              </button>
+              </Link>
             </div>
 
             <div className="mt-10 flex flex-wrap gap-6 text-sm text-slate-600">
@@ -62,7 +70,7 @@ export default async function HomePage() {
         </PageContainer>
       </section>
 
-      <section className="py-16">
+      <section id="category-explorer" className="py-16">
         <PageContainer>
           <div className="mb-6">
             <span className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
@@ -103,9 +111,12 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <button className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+            <Link
+              href="/#category-explorer"
+              className="rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            >
               View all categories
-            </button>
+            </Link>
           </div>
 
           {categories.length > 0 ? (

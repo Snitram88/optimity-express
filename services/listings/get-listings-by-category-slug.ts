@@ -7,8 +7,21 @@ export type CategoryListingItem = {
   price_optional: number | null;
   is_featured: boolean;
   vendor: {
+    id: string;
     business_name: string;
     slug: string;
+    phone: string | null;
+    whatsapp_number: string | null;
+    is_verified: boolean;
+    subscription_tier: string;
+    location: {
+      address_line_1: string;
+      city: string;
+      region: string | null;
+      country: string;
+      latitude: number | null;
+      longitude: number | null;
+    } | null;
   } | null;
   category: {
     id: string;
@@ -43,21 +56,34 @@ type SubcategoryRow = {
   slug: string;
 };
 
+type VendorRow = {
+  id: string;
+  business_name: string;
+  slug: string;
+  phone: string | null;
+  whatsapp_number: string | null;
+  is_verified: boolean;
+  subscription_tier: string;
+};
+
+type VendorLocationRow = {
+  vendor_id: string;
+  address_line_1: string;
+  city: string;
+  region: string | null;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 type ListingRow = {
   id: string;
   title: string;
   description: string | null;
   price_optional: number | null;
   is_featured: boolean;
-  vendors: {
-    business_name: string;
-    slug: string;
-  } | null;
-  categories: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
+  vendor_id: string;
+  category_id: string;
 };
 
 export async function getListingsByCategorySlug(
@@ -89,9 +115,8 @@ export async function getListingsByCategorySlug(
     return null;
   }
 
-  const subcategoryIds = ((subcategories ?? []) as SubcategoryRow[]).map(
-    (subcategory) => subcategory.id
-  );
+  const safeSubcategories = (subcategories ?? []) as SubcategoryRow[];
+  const subcategoryIds = safeSubcategories.map((subcategory) => subcategory.id);
 
   if (subcategoryIds.length === 0) {
     return {
@@ -110,15 +135,8 @@ export async function getListingsByCategorySlug(
       description,
       price_optional,
       is_featured,
-      vendors (
-        business_name,
-        slug
-      ),
-      categories (
-        id,
-        name,
-        slug
-      )
+      vendor_id,
+      category_id
     `
     )
     .in("category_id", subcategoryIds)
@@ -131,28 +149,109 @@ export async function getListingsByCategorySlug(
     return null;
   }
 
+  const safeListings = (listings ?? []) as ListingRow[];
+  const vendorIds = [...new Set(safeListings.map((listing) => listing.vendor_id))];
+
+  const { data: vendors, error: vendorsError } = await supabase
+    .from("vendors")
+    .select(
+      `
+      id,
+      business_name,
+      slug,
+      phone,
+      whatsapp_number,
+      is_verified,
+      subscription_tier
+    `
+    )
+    .in("id", vendorIds);
+
+  if (vendorsError) {
+    console.error("Error fetching vendors:", vendorsError);
+    return null;
+  }
+
+  const { data: vendorLocations, error: vendorLocationsError } = await supabase
+    .from("vendor_locations")
+    .select(
+      `
+      vendor_id,
+      address_line_1,
+      city,
+      region,
+      country,
+      latitude,
+      longitude
+    `
+    )
+    .in("vendor_id", vendorIds);
+
+  if (vendorLocationsError) {
+    console.error("Error fetching vendor locations:", vendorLocationsError);
+    return null;
+  }
+
+  const vendorMap = new Map<string, VendorRow>();
+  ((vendors ?? []) as VendorRow[]).forEach((vendor) => {
+    vendorMap.set(vendor.id, vendor);
+  });
+
+  const vendorLocationMap = new Map<string, VendorLocationRow>();
+  ((vendorLocations ?? []) as VendorLocationRow[]).forEach((location) => {
+    if (!vendorLocationMap.has(location.vendor_id)) {
+      vendorLocationMap.set(location.vendor_id, location);
+    }
+  });
+
+  const subcategoryMap = new Map<string, SubcategoryRow>();
+  safeSubcategories.forEach((subcategory) => {
+    subcategoryMap.set(subcategory.id, subcategory);
+  });
+
   return {
     category: parentCategory as ParentCategoryRow,
-    subcategories: (subcategories ?? []) as SubcategoryRow[],
-    listings: ((listings ?? []) as ListingRow[]).map((listing) => ({
-      id: listing.id,
-      title: listing.title,
-      description: listing.description,
-      price_optional: listing.price_optional,
-      is_featured: listing.is_featured,
-      vendor: listing.vendors
-        ? {
-            business_name: listing.vendors.business_name,
-            slug: listing.vendors.slug,
-          }
-        : null,
-      category: listing.categories
-        ? {
-            id: listing.categories.id,
-            name: listing.categories.name,
-            slug: listing.categories.slug,
-          }
-        : null,
-    })),
+    subcategories: safeSubcategories,
+    listings: safeListings.map((listing) => {
+      const vendor = vendorMap.get(listing.vendor_id) ?? null;
+      const location = vendor ? vendorLocationMap.get(vendor.id) ?? null : null;
+      const listingCategory = subcategoryMap.get(listing.category_id) ?? null;
+
+      return {
+        id: listing.id,
+        title: listing.title,
+        description: listing.description,
+        price_optional: listing.price_optional,
+        is_featured: listing.is_featured,
+        vendor: vendor
+          ? {
+              id: vendor.id,
+              business_name: vendor.business_name,
+              slug: vendor.slug,
+              phone: vendor.phone,
+              whatsapp_number: vendor.whatsapp_number,
+              is_verified: vendor.is_verified,
+              subscription_tier: vendor.subscription_tier,
+              location: location
+                ? {
+                    address_line_1: location.address_line_1,
+                    city: location.city,
+                    region: location.region,
+                    country: location.country,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                  }
+                : null,
+            }
+          : null,
+        category: listingCategory
+          ? {
+              id: listingCategory.id,
+              name: listingCategory.name,
+              slug: listingCategory.slug,
+            }
+          : null,
+      };
+    }),
   };
 }

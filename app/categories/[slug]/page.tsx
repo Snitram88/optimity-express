@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { CategoryFilterSidebar } from "@/components/filters/category-filter-sidebar";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
-import { ListingCard } from "@/components/listings/listing-card";
+import { CategoryListingsGrid } from "@/components/listings/category-listings-grid";
 import { getListingsByCategorySlug } from "@/services/listings/get-listings-by-category-slug";
 
 type CategoryPageProps = {
@@ -68,11 +68,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             </div>
 
             {data.listings.length > 0 ? (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {data.listings.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} />
-                ))}
-              </div>
+              <CategoryListingsGrid listings={data.listings} />
             ) : (
               <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-600">
                 No listings found in this category yet.
