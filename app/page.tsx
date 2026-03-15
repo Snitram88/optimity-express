@@ -1,7 +1,12 @@
-export default function HomePage() {
+import { CategoryCard } from "@/components/cards/category-card";
+import { getCategories } from "@/services/categories/get-categories";
+
+export default async function HomePage() {
+  const categories = await getCategories();
+
   return (
     <main className="min-h-screen bg-white text-slate-900">
-      <section className="mx-auto flex min-h-screen max-w-7xl items-center px-6 py-16">
+      <section className="mx-auto max-w-7xl px-6 py-16">
         <div className="max-w-3xl">
           <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
             Optimity Express
@@ -26,6 +31,29 @@ export default function HomePage() {
             </button>
           </div>
         </div>
+
+        <section className="mt-16">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+              Popular Categories
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Explore active top-level categories from the marketplace.
+            </p>
+          </div>
+
+          {categories.length > 0 ? (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {categories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+              No active categories found yet.
+            </div>
+          )}
+        </section>
       </section>
     </main>
   );
