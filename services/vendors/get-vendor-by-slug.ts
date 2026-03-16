@@ -8,6 +8,15 @@ export type VendorCatalogueItem = {
   is_featured: boolean;
 };
 
+export type VendorReviewItem = {
+  id: string;
+  reviewer_name: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  is_verified_interaction: boolean;
+};
+
 export type VendorDetails = {
   id: string;
   business_name: string;
@@ -21,6 +30,8 @@ export type VendorDetails = {
   subscription_tier: string;
   is_verified: boolean;
   status: string;
+  average_rating: number | null;
+  review_count: number;
   location: {
     address_line_1: string;
     city: string;
@@ -30,6 +41,7 @@ export type VendorDetails = {
     longitude: number | null;
   } | null;
   catalogue: VendorCatalogueItem[];
+  reviews: VendorReviewItem[];
 };
 
 type VendorRow = {
@@ -45,14 +57,15 @@ type VendorRow = {
   subscription_tier: string;
   is_verified: boolean;
   status: string;
-  vendor_locations: Array<{
-    address_line_1: string;
-    city: string;
-    region: string | null;
-    country: string;
-    latitude: number | null;
-    longitude: number | null;
-  }> | null;
+};
+
+type VendorLocationRow = {
+  address_line_1: string;
+  city: string;
+  region: string | null;
+  country: string;
+  latitude: number | null;
+  longitude: number | null;
 };
 
 type ListingRow = {
@@ -63,12 +76,21 @@ type ListingRow = {
   is_featured: boolean;
 };
 
+type ReviewRow = {
+  id: string;
+  reviewer_name: string;
+  rating: number;
+  review_text: string | null;
+  created_at: string;
+  is_verified_interaction: boolean;
+};
+
 export async function getVendorBySlug(
   slug: string
 ): Promise<VendorDetails | null> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  const { data: vendor, error: vendorError } = await supabase
     .from("vendors")
     .select(
       `
@@ -83,27 +105,36 @@ export async function getVendorBySlug(
       cover_image_url,
       subscription_tier,
       is_verified,
-      status,
-      vendor_locations (
-        address_line_1,
-        city,
-        region,
-        country,
-        latitude,
-        longitude
-      )
+      status
     `
     )
     .eq("slug", slug)
     .eq("status", "active")
     .single();
 
-  if (error || !data) {
-    console.error("Error fetching vendor:", error?.message);
+  if (vendorError || !vendor) {
+    console.error("Error fetching vendor:", vendorError);
     return null;
   }
 
-  const vendor = data as VendorRow;
+  const { data: locations, error: locationError } = await supabase
+    .from("vendor_locations")
+    .select(
+      `
+      address_line_1,
+      city,
+      region,
+      country,
+      latitude,
+      longitude
+    `
+    )
+    .eq("vendor_id", vendor.id)
+    .limit(1);
+
+  if (locationError) {
+    console.error("Error fetching vendor location:", locationError);
+  }
 
   const { data: listings, error: listingsError } = await supabase
     .from("listings")
@@ -114,24 +145,59 @@ export async function getVendorBySlug(
     .order("created_at", { ascending: false });
 
   if (listingsError) {
-    console.error("Error fetching vendor listings:", listingsError.message);
+    console.error("Error fetching vendor listings:", listingsError);
   }
 
-  const firstLocation = vendor.vendor_locations?.[0] ?? null;
+  const { data: reviews, error: reviewsError } = await supabase
+    .from("vendor_reviews")
+    .select(
+      `
+      id,
+      reviewer_name,
+      rating,
+      review_text,
+      created_at,
+      is_verified_interaction
+    `
+    )
+    .eq("vendor_id", vendor.id)
+    .eq("status", "approved")
+    .order("created_at", { ascending: false });
+
+  if (reviewsError) {
+    console.error("Error fetching vendor reviews:", reviewsError);
+  }
+
+  const safeReviews = (reviews ?? []) as ReviewRow[];
+  const reviewCount = safeReviews.length;
+  const averageRating =
+    reviewCount > 0
+      ? Number(
+          (
+            safeReviews.reduce((sum, review) => sum + review.rating, 0) /
+            reviewCount
+          ).toFixed(1)
+        )
+      : null;
+
+  const firstLocation = ((locations ?? []) as VendorLocationRow[])[0] ?? null;
+  const safeVendor = vendor as VendorRow;
 
   return {
-    id: vendor.id,
-    business_name: vendor.business_name,
-    slug: vendor.slug,
-    description: vendor.description,
-    phone: vendor.phone,
-    whatsapp_number: vendor.whatsapp_number,
-    email: vendor.email,
-    logo_url: vendor.logo_url,
-    cover_image_url: vendor.cover_image_url,
-    subscription_tier: vendor.subscription_tier,
-    is_verified: vendor.is_verified,
-    status: vendor.status,
+    id: safeVendor.id,
+    business_name: safeVendor.business_name,
+    slug: safeVendor.slug,
+    description: safeVendor.description,
+    phone: safeVendor.phone,
+    whatsapp_number: safeVendor.whatsapp_number,
+    email: safeVendor.email,
+    logo_url: safeVendor.logo_url,
+    cover_image_url: safeVendor.cover_image_url,
+    subscription_tier: safeVendor.subscription_tier,
+    is_verified: safeVendor.is_verified,
+    status: safeVendor.status,
+    average_rating: averageRating,
+    review_count: reviewCount,
     location: firstLocation
       ? {
           address_line_1: firstLocation.address_line_1,
@@ -142,12 +208,20 @@ export async function getVendorBySlug(
           longitude: firstLocation.longitude,
         }
       : null,
-    catalogue: ((listings as ListingRow[]) ?? []).map((item) => ({
+    catalogue: ((listings ?? []) as ListingRow[]).map((item) => ({
       id: item.id,
       title: item.title,
       description: item.description,
       price_optional: item.price_optional,
       is_featured: item.is_featured,
+    })),
+    reviews: safeReviews.map((review) => ({
+      id: review.id,
+      reviewer_name: review.reviewer_name,
+      rating: review.rating,
+      review_text: review.review_text,
+      created_at: review.created_at,
+      is_verified_interaction: review.is_verified_interaction,
     })),
   };
 }

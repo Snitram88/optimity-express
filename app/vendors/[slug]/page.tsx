@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { VendorReviewForm } from "@/components/forms/vendor-review-form";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
 import { getVendorBySlug } from "@/services/vendors/get-vendor-by-slug";
@@ -37,6 +38,16 @@ function formatPrice(price: number | null) {
     currency: "NGN",
     maximumFractionDigits: 0,
   }).format(price);
+}
+
+function formatReviewDate(dateString: string) {
+  return new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+  }).format(new Date(dateString));
+}
+
+function renderStars(rating: number) {
+  return "★".repeat(rating) + "☆".repeat(5 - rating);
 }
 
 export default async function VendorPage({ params }: VendorPageProps) {
@@ -95,6 +106,13 @@ export default async function VendorPage({ params }: VendorPageProps) {
                     {vendor.subscription_tier === "premium" && (
                       <span className="rounded-full bg-amber-400/90 px-3 py-1 text-xs font-semibold text-slate-950">
                         Premium
+                      </span>
+                    )}
+
+                    {vendor.average_rating !== null && (
+                      <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-900">
+                        {vendor.average_rating} / 5 • {vendor.review_count} review
+                        {vendor.review_count === 1 ? "" : "s"}
                       </span>
                     )}
                   </div>
@@ -204,6 +222,93 @@ export default async function VendorPage({ params }: VendorPageProps) {
                   No catalogue items available yet.
                 </div>
               )}
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                Reviews
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                Customer feedback
+              </h2>
+
+              {vendor.average_rating !== null ? (
+                <div className="mt-6 rounded-3xl bg-slate-50 p-5">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <p className="text-3xl font-bold text-slate-900">
+                      {vendor.average_rating}
+                    </p>
+                    <div>
+                      <p className="text-amber-500">
+                        {renderStars(Math.round(vendor.average_rating))}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Based on {vendor.review_count} approved review
+                        {vendor.review_count === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-6 text-sm text-slate-600">
+                  No approved reviews yet.
+                </p>
+              )}
+
+              <div className="mt-8 space-y-5">
+                {vendor.reviews.length > 0 ? (
+                  vendor.reviews.map((review) => (
+                    <article
+                      key={review.id}
+                      className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-slate-900">
+                            {review.reviewer_name}
+                          </p>
+                          <p className="mt-1 text-sm text-amber-500">
+                            {renderStars(review.rating)}
+                          </p>
+                        </div>
+
+                        <div className="text-right text-xs text-slate-500">
+                          <p>{formatReviewDate(review.created_at)}</p>
+                          {review.is_verified_interaction ? (
+                            <p className="mt-1 text-emerald-600">
+                              Verified interaction
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <p className="mt-4 text-sm leading-7 text-slate-600">
+                        {review.review_text ?? "No written review provided."}
+                      </p>
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+                    No customer reviews have been published yet.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                Leave a review
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                Share your experience
+              </h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Leave a rating and short review for this vendor. Reviews are moderated before they appear publicly.
+              </p>
+
+              <div className="mt-6">
+                <VendorReviewForm vendorId={vendor.id} />
+              </div>
             </div>
 
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
