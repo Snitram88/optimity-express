@@ -1,17 +1,17 @@
-import Link from "next/link";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
-import { vendorPasswordLogin } from "./actions";
+import { sendVendorJoinLink } from "./actions";
 
-type VendorLoginPageProps = {
+type VendorJoinPageProps = {
   searchParams: Promise<{
+    sent?: string;
     error?: string;
   }>;
 };
 
-export default async function VendorLoginPage({
+export default async function VendorJoinPage({
   searchParams,
-}: VendorLoginPageProps) {
+}: VendorJoinPageProps) {
   const params = await searchParams;
 
   return (
@@ -19,23 +19,24 @@ export default async function VendorLoginPage({
       <SiteHeader />
 
       <PageContainer className="py-16 sm:py-20">
-        <div className="mx-auto max-w-xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
+        <div className="mx-auto max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm sm:p-10">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-            Vendor Login
+            Join as Vendor
           </p>
 
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-            Sign in to your vendor account
+            Start your secure vendor onboarding
           </h1>
 
           <p className="mt-4 text-sm leading-7 text-slate-600">
-            Use your email and password to access your vendor account.
+            Enter your business email and we’ll send you a secure link to complete
+            your vendor application. This helps us avoid spam and fake submissions.
           </p>
 
-          <form action={vendorPasswordLogin} className="mt-8 space-y-5">
+          <form action={sendVendorJoinLink} className="mt-8 space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
-                Email address
+                Business email
               </label>
               <input
                 type="email"
@@ -46,35 +47,19 @@ export default async function VendorLoginPage({
               />
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">
-                Password
-              </label>
-              <input
-                type="password"
-                name="password"
-                required
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none"
-                placeholder="Enter your password"
-              />
-            </div>
-
             <button
               type="submit"
               className="w-full rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
             >
-              Sign In
+              Send Secure Link
             </button>
           </form>
 
-          <div className="mt-5 text-sm">
-            <Link
-              href="/vendors/forgot-password"
-              className="font-medium text-emerald-700 hover:text-emerald-800"
-            >
-              Forgot your password?
-            </Link>
-          </div>
+          {params.sent ? (
+            <div className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+              Secure link sent. Check your email.
+            </div>
+          ) : null}
 
           {params.error ? (
             <div className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-800">

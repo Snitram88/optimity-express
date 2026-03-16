@@ -13,6 +13,18 @@ export async function submitVendorApplication(
 ): Promise<VendorApplicationState> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      success: false,
+      message: "You must open this form from your secure vendor link.",
+    };
+  }
+
   const business_name = String(formData.get("business_name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -46,6 +58,7 @@ export async function submitVendorApplication(
       : null;
 
   const { error } = await supabase.from("vendor_applications").insert({
+    auth_user_id: user.id,
     business_name,
     description: description || null,
     phone: phone || null,

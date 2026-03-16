@@ -43,7 +43,7 @@ export function SiteHeader() {
             </Link>
 
             <Link
-              href="/vendors/apply"
+              href="/vendors/join"
               className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600"
             >
               Join as Vendor

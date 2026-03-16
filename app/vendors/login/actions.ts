@@ -3,26 +3,25 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
-export async function sendVendorMagicLink(formData: FormData) {
+export async function vendorPasswordLogin(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
 
-  if (!email) {
-    redirect("/vendors/login?error=Please%20enter%20your%20email");
+  if (!email || !password) {
+    redirect("/vendors/login?error=Please%20enter%20your%20email%20and%20password");
   }
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithPassword({
     email,
-    options: {
-      emailRedirectTo: "http://localhost:3000/",
-    },
+    password,
   });
 
   if (error) {
-    console.error("Error sending magic link:", error);
-    redirect("/vendors/login?error=Unable%20to%20send%20magic%20link");
+    console.error("Vendor login error:", error);
+    redirect("/vendors/login?error=Invalid%20email%20or%20password");
   }
 
-  redirect("/vendors/login?sent=1");
+  redirect("/");
 }
