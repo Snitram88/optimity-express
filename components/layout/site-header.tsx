@@ -1,8 +1,16 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { PageContainer } from "@/components/layout/page-container";
 import { SearchBar } from "@/components/ui/search-bar";
+import { logoutUser } from "@/app/auth/logout/actions";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
       <PageContainer>
@@ -35,19 +43,38 @@ export function SiteHeader() {
               Browse
             </Link>
 
-            <Link
-              href="/vendors/login"
-              className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
-            >
-              Vendor Login
-            </Link>
+            {!user ? (
+              <>
+                <Link
+                  href="/vendors/login"
+                  className="hidden rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 md:inline-flex"
+                >
+                  Vendor Login
+                </Link>
 
-            <Link
-              href="/vendors/join"
-              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600"
-            >
-              Join as Vendor
-            </Link>
+                <Link
+                  href="/vendors/join"
+                  className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-600"
+                >
+                  Join as Vendor
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="hidden text-sm text-slate-500 md:inline">
+                  {user.email}
+                </span>
+
+                <form action={logoutUser}>
+                  <button
+                    type="submit"
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Logout
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         </div>
 
