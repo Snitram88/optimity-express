@@ -15,12 +15,20 @@ export async function sendVendorJoinLink(formData: FormData) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: "http://localhost:3000/vendors/apply/secure",
+      emailRedirectTo:
+        "http://localhost:3000/auth/callback?next=/vendors/apply/secure",
     },
   });
 
   if (error) {
     console.error("Error sending vendor join link:", error);
+
+    if (error.status === 429) {
+      redirect(
+        "/vendors/join?error=Too%20many%20emails%20sent.%20Please%20wait%20a%20few%20minutes%20before%20trying%20again."
+      );
+    }
+
     redirect("/vendors/join?error=Unable%20to%20send%20secure%20link");
   }
 
