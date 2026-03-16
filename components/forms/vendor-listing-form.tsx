@@ -79,7 +79,6 @@ export function VendorListingForm({
             value={selectedCategoryId}
             onChange={(event) => setSelectedCategoryId(event.target.value)}
             className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none"
-            defaultValue=""
           >
             <option value="">Select main category</option>
             {categories.map((category) => (

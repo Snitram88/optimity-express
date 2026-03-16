@@ -52,13 +52,23 @@ export async function approveVendorApplication(formData: FormData) {
     return;
   }
 
-  const existingVendorCheck = await supabase
-    .from("vendors")
-    .select("id")
-    .eq("email", application.email)
-    .maybeSingle();
+  const emailCheck = application.email
+    ? await supabase
+        .from("vendors")
+        .select("id")
+        .ilike("email", application.email)
+        .maybeSingle()
+    : { data: null };
 
-  if (existingVendorCheck.data) {
+  const phoneCheck = application.phone
+    ? await supabase
+        .from("vendors")
+        .select("id")
+        .eq("phone", application.phone)
+        .maybeSingle()
+    : { data: null };
+
+  if (emailCheck.data || phoneCheck.data) {
     await supabase
       .from("vendor_applications")
       .update({ status: "needs_update" })

@@ -1,10 +1,9 @@
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
-import { sendVendorJoinLink } from "./actions";
+import { registerVendorAccount } from "./actions";
 
 type VendorJoinPageProps = {
   searchParams: Promise<{
-    sent?: string;
     error?: string;
   }>;
 };
@@ -25,15 +24,15 @@ export default async function VendorJoinPage({
           </p>
 
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">
-            Start your secure vendor onboarding
+            Create your vendor account
           </h1>
 
           <p className="mt-4 text-sm leading-7 text-slate-600">
-            Enter your business email and we’ll send you a secure link to complete
-            your vendor application. This helps us avoid spam and fake submissions.
+            Create your vendor login with email and password, then complete your
+            business application for review.
           </p>
 
-          <form action={sendVendorJoinLink} className="mt-8 space-y-5">
+          <form action={registerVendorAccount} className="mt-8 space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">
                 Business email
@@ -47,19 +46,39 @@ export default async function VendorJoinPage({
               />
             </div>
 
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Password
+              </label>
+              <input
+                type="password"
+                name="password"
+                required
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none"
+                placeholder="Create a password"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Confirm password
+              </label>
+              <input
+                type="password"
+                name="confirm_password"
+                required
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none"
+                placeholder="Confirm your password"
+              />
+            </div>
+
             <button
               type="submit"
               className="w-full rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
             >
-              Send Secure Link
+              Create Vendor Account
             </button>
           </form>
-
-          {params.sent ? (
-            <div className="mt-5 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-              Secure link sent. Check your email.
-            </div>
-          ) : null}
 
           {params.error ? (
             <div className="mt-5 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-800">

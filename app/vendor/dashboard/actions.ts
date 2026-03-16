@@ -142,3 +142,141 @@ export async function createVendorListing(
     message: "Listing created successfully.",
   };
 }
+
+export async function updateVendorListing(
+  _prevState: VendorDashboardFormState,
+  formData: FormData
+): Promise<VendorDashboardFormState> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      success: false,
+      message: "You must be logged in to edit a listing.",
+    };
+  }
+
+  const listing_id = String(formData.get("listing_id") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const priceValue = String(formData.get("price_optional") ?? "").trim();
+  const is_featured = String(formData.get("is_featured") ?? "") === "on";
+
+  if (!listing_id || !title) {
+    return {
+      success: false,
+      message: "Listing title is required.",
+    };
+  }
+
+  const { data: vendor, error: vendorError } = await supabase
+    .from("vendors")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (vendorError || !vendor) {
+    return {
+      success: false,
+      message: "Vendor account not found.",
+    };
+  }
+
+  const price_optional =
+    priceValue.length > 0 && !Number.isNaN(Number(priceValue))
+      ? Number(priceValue)
+      : null;
+
+  const { error } = await supabase
+    .from("listings")
+    .update({
+      title,
+      description: description || null,
+      price_optional,
+      is_featured,
+    })
+    .eq("id", listing_id)
+    .eq("vendor_id", vendor.id);
+
+  if (error) {
+    console.error("Error updating vendor listing:", error);
+    return {
+      success: false,
+      message: "Could not update listing right now.",
+    };
+  }
+
+  revalidatePath("/vendor/dashboard");
+
+  return {
+    success: true,
+    message: "Listing updated successfully.",
+  };
+}
+
+export async function deleteVendorListing(
+  _prevState: VendorDashboardFormState,
+  formData: FormData
+): Promise<VendorDashboardFormState> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return {
+      success: false,
+      message: "You must be logged in to delete a listing.",
+    };
+  }
+
+  const listing_id = String(formData.get("listing_id") ?? "").trim();
+
+  if (!listing_id) {
+    return {
+      success: false,
+      message: "Listing not found.",
+    };
+  }
+
+  const { data: vendor, error: vendorError } = await supabase
+    .from("vendors")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (vendorError || !vendor) {
+    return {
+      success: false,
+      message: "Vendor account not found.",
+    };
+  }
+
+  const { error } = await supabase
+    .from("listings")
+    .delete()
+    .eq("id", listing_id)
+    .eq("vendor_id", vendor.id);
+
+  if (error) {
+    console.error("Error deleting vendor listing:", error);
+    return {
+      success: false,
+      message: "Could not delete listing right now.",
+    };
+  }
+
+  revalidatePath("/vendor/dashboard");
+
+  return {
+    success: true,
+    message: "Listing deleted successfully.",
+  };
+}

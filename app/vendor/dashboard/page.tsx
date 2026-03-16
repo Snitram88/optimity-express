@@ -3,22 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
 import { VendorListingForm } from "@/components/forms/vendor-listing-form";
+import { VendorListingManager } from "@/components/forms/vendor-listing-manager";
 import { VendorProfileForm } from "@/components/forms/vendor-profile-form";
 import { getCurrentVendorDashboard } from "@/services/vendor-dashboard/get-current-vendor-dashboard";
 import { getCategoryOptions } from "@/services/categories/get-category-options";
 
 function renderStars(rating: number) {
   return "★".repeat(rating) + "☆".repeat(5 - rating);
-}
-
-function formatPrice(price: number | null) {
-  if (price === null) return "Price on request";
-
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    maximumFractionDigits: 0,
-  }).format(price);
 }
 
 export default async function VendorDashboardPage() {
@@ -122,7 +113,7 @@ export default async function VendorDashboardPage() {
 
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Listings
+                New Listing
               </p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
                 Add a new product or service
@@ -133,6 +124,19 @@ export default async function VendorDashboardPage() {
                   categories={categories}
                   subcategories={subcategories}
                 />
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                Manage Listings
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                Edit or delete existing listings
+              </h2>
+
+              <div className="mt-6">
+                <VendorListingManager listings={dashboard.listings} />
               </div>
             </div>
 
@@ -184,50 +188,27 @@ export default async function VendorDashboardPage() {
           <aside className="space-y-8">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Live Catalogue
+                Status
               </p>
               <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
-                Your listings
+                Account overview
               </h2>
 
-              <div className="mt-6 space-y-4">
-                {dashboard.listings.length > 0 ? (
-                  dashboard.listings.map((listing) => (
-                    <article
-                      key={listing.id}
-                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="font-semibold text-slate-900">
-                          {listing.title}
-                        </h3>
+              <div className="mt-6 space-y-4 text-sm text-slate-600">
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="font-semibold text-slate-900">Business name</p>
+                  <p className="mt-2">{dashboard.vendor.business_name}</p>
+                </div>
 
-                        {listing.is_featured ? (
-                          <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
-                            Featured
-                          </span>
-                        ) : null}
-                      </div>
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="font-semibold text-slate-900">Email</p>
+                  <p className="mt-2">{dashboard.vendor.email ?? "N/A"}</p>
+                </div>
 
-                      <p className="mt-3 text-sm text-slate-600">
-                        {listing.description ?? "No description available."}
-                      </p>
-
-                      <div className="mt-4 flex items-center justify-between gap-3 text-sm">
-                        <span className="font-semibold text-emerald-700">
-                          {formatPrice(listing.price_optional)}
-                        </span>
-                        <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-medium text-slate-700">
-                          {listing.status}
-                        </span>
-                      </div>
-                    </article>
-                  ))
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
-                    No listings created yet.
-                  </div>
-                )}
+                <div className="rounded-2xl bg-slate-50 p-4">
+                  <p className="font-semibold text-slate-900">Slug</p>
+                  <p className="mt-2">{dashboard.vendor.slug}</p>
+                </div>
               </div>
             </div>
           </aside>

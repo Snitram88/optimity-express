@@ -21,7 +21,7 @@ export async function submitVendorApplication(
   if (userError || !user) {
     return {
       success: false,
-      message: "You must open this form from your secure vendor link.",
+      message: "You must be logged in to submit a vendor application.",
     };
   }
 
@@ -44,6 +44,20 @@ export async function submitVendorApplication(
     return {
       success: false,
       message: "Please complete all required business and address fields.",
+    };
+  }
+
+  const { data: existingPending } = await supabase
+    .from("vendor_applications")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (existingPending) {
+    return {
+      success: false,
+      message: "You already have a pending application under review.",
     };
   }
 
