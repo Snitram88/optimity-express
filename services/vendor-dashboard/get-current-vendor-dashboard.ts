@@ -18,6 +18,22 @@ export type DashboardReview = {
   created_at: string;
 };
 
+export type DashboardGalleryImage = {
+  id: string;
+  image_url: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_featured: boolean;
+};
+
+export type DashboardOpeningHour = {
+  id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  open_time: string | null;
+  close_time: string | null;
+};
+
 export type VendorDashboardData = {
   vendor: {
     id: string;
@@ -34,11 +50,14 @@ export type VendorDashboardData = {
   };
   listings: DashboardListing[];
   reviews: DashboardReview[];
+  galleryImages: DashboardGalleryImage[];
+  openingHours: DashboardOpeningHour[];
   metrics: {
     totalListings: number;
     featuredListings: number;
     approvedReviews: number;
     averageRating: number | null;
+    galleryImages: number;
   };
 };
 
@@ -114,8 +133,45 @@ export async function getCurrentVendorDashboard(): Promise<VendorDashboardData |
     return null;
   }
 
+  const { data: galleryImages, error: galleryError } = await supabase
+    .from("vendor_images")
+    .select(`
+      id,
+      image_url,
+      alt_text,
+      sort_order,
+      is_featured
+    `)
+    .eq("vendor_id", vendor.id)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (galleryError) {
+    console.error("Error fetching vendor dashboard gallery:", galleryError);
+    return null;
+  }
+
+  const { data: openingHours, error: hoursError } = await supabase
+    .from("vendor_opening_hours")
+    .select(`
+      id,
+      day_of_week,
+      is_closed,
+      open_time,
+      close_time
+    `)
+    .eq("vendor_id", vendor.id)
+    .order("day_of_week", { ascending: true });
+
+  if (hoursError) {
+    console.error("Error fetching vendor dashboard opening hours:", hoursError);
+    return null;
+  }
+
   const safeListings = (listings ?? []) as DashboardListing[];
   const safeReviews = (reviews ?? []) as DashboardReview[];
+  const safeGalleryImages = (galleryImages ?? []) as DashboardGalleryImage[];
+  const safeOpeningHours = (openingHours ?? []) as DashboardOpeningHour[];
 
   const averageRating =
     safeReviews.length > 0
@@ -131,11 +187,14 @@ export async function getCurrentVendorDashboard(): Promise<VendorDashboardData |
     vendor: vendor as VendorDashboardData["vendor"],
     listings: safeListings,
     reviews: safeReviews,
+    galleryImages: safeGalleryImages,
+    openingHours: safeOpeningHours,
     metrics: {
       totalListings: safeListings.length,
       featuredListings: safeListings.filter((item) => item.is_featured).length,
       approvedReviews: safeReviews.length,
       averageRating,
+      galleryImages: safeGalleryImages.length,
     },
   };
 }

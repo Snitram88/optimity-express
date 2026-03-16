@@ -17,6 +17,22 @@ export type VendorReviewItem = {
   is_verified_interaction: boolean;
 };
 
+export type VendorGalleryImage = {
+  id: string;
+  image_url: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_featured: boolean;
+};
+
+export type VendorOpeningHour = {
+  id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  open_time: string | null;
+  close_time: string | null;
+};
+
 export type VendorDetails = {
   id: string;
   business_name: string;
@@ -42,6 +58,8 @@ export type VendorDetails = {
   } | null;
   catalogue: VendorCatalogueItem[];
   reviews: VendorReviewItem[];
+  galleryImages: VendorGalleryImage[];
+  openingHours: VendorOpeningHour[];
 };
 
 type VendorRow = {
@@ -83,6 +101,22 @@ type ReviewRow = {
   review_text: string | null;
   created_at: string;
   is_verified_interaction: boolean;
+};
+
+type GalleryRow = {
+  id: string;
+  image_url: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_featured: boolean;
+};
+
+type HoursRow = {
+  id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  open_time: string | null;
+  close_time: string | null;
 };
 
 export async function getVendorBySlug(
@@ -168,6 +202,27 @@ export async function getVendorBySlug(
     console.error("Error fetching vendor reviews:", reviewsError);
   }
 
+  const { data: galleryImages, error: galleryError } = await supabase
+    .from("vendor_images")
+    .select("id, image_url, alt_text, sort_order, is_featured")
+    .eq("vendor_id", vendor.id)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  if (galleryError) {
+    console.error("Error fetching vendor gallery images:", galleryError);
+  }
+
+  const { data: openingHours, error: hoursError } = await supabase
+    .from("vendor_opening_hours")
+    .select("id, day_of_week, is_closed, open_time, close_time")
+    .eq("vendor_id", vendor.id)
+    .order("day_of_week", { ascending: true });
+
+  if (hoursError) {
+    console.error("Error fetching vendor opening hours:", hoursError);
+  }
+
   const safeReviews = (reviews ?? []) as ReviewRow[];
   const reviewCount = safeReviews.length;
   const averageRating =
@@ -223,5 +278,7 @@ export async function getVendorBySlug(
       created_at: review.created_at,
       is_verified_interaction: review.is_verified_interaction,
     })),
+    galleryImages: (galleryImages ?? []) as GalleryRow[],
+    openingHours: (openingHours ?? []) as HoursRow[],
   };
 }

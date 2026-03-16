@@ -8,6 +8,31 @@ export type VendorDashboardFormState = {
   message: string;
 };
 
+async function getCurrentVendorId() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return { supabase, vendorId: null as string | null };
+  }
+
+  const { data: vendor, error: vendorError } = await supabase
+    .from("vendors")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (vendorError || !vendor) {
+    return { supabase, vendorId: null as string | null };
+  }
+
+  return { supabase, vendorId: vendor.id as string };
+}
+
 export async function updateVendorProfile(
   _prevState: VendorDashboardFormState,
   formData: FormData
@@ -61,6 +86,7 @@ export async function updateVendorProfile(
   }
 
   revalidatePath("/vendor/dashboard");
+  revalidatePath("/vendors/[slug]", "page");
 
   return {
     success: true,
@@ -72,27 +98,9 @@ export async function createVendorListing(
   _prevState: VendorDashboardFormState,
   formData: FormData
 ): Promise<VendorDashboardFormState> {
-  const supabase = await createClient();
+  const { supabase, vendorId } = await getCurrentVendorId();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
-    return {
-      success: false,
-      message: "You must be logged in to create a listing.",
-    };
-  }
-
-  const { data: vendor, error: vendorError } = await supabase
-    .from("vendors")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (vendorError || !vendor) {
+  if (!vendorId) {
     return {
       success: false,
       message: "Vendor account not found.",
@@ -118,7 +126,7 @@ export async function createVendorListing(
       : null;
 
   const { error } = await supabase.from("listings").insert({
-    vendor_id: vendor.id,
+    vendor_id: vendorId,
     category_id,
     title,
     description: description || null,
@@ -147,17 +155,12 @@ export async function updateVendorListing(
   _prevState: VendorDashboardFormState,
   formData: FormData
 ): Promise<VendorDashboardFormState> {
-  const supabase = await createClient();
+  const { supabase, vendorId } = await getCurrentVendorId();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!vendorId) {
     return {
       success: false,
-      message: "You must be logged in to edit a listing.",
+      message: "Vendor account not found.",
     };
   }
 
@@ -171,19 +174,6 @@ export async function updateVendorListing(
     return {
       success: false,
       message: "Listing title is required.",
-    };
-  }
-
-  const { data: vendor, error: vendorError } = await supabase
-    .from("vendors")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (vendorError || !vendor) {
-    return {
-      success: false,
-      message: "Vendor account not found.",
     };
   }
 
@@ -201,7 +191,7 @@ export async function updateVendorListing(
       is_featured,
     })
     .eq("id", listing_id)
-    .eq("vendor_id", vendor.id);
+    .eq("vendor_id", vendorId);
 
   if (error) {
     console.error("Error updating vendor listing:", error);
@@ -223,17 +213,12 @@ export async function deleteVendorListing(
   _prevState: VendorDashboardFormState,
   formData: FormData
 ): Promise<VendorDashboardFormState> {
-  const supabase = await createClient();
+  const { supabase, vendorId } = await getCurrentVendorId();
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError || !user) {
+  if (!vendorId) {
     return {
       success: false,
-      message: "You must be logged in to delete a listing.",
+      message: "Vendor account not found.",
     };
   }
 
@@ -246,24 +231,11 @@ export async function deleteVendorListing(
     };
   }
 
-  const { data: vendor, error: vendorError } = await supabase
-    .from("vendors")
-    .select("id")
-    .eq("user_id", user.id)
-    .single();
-
-  if (vendorError || !vendor) {
-    return {
-      success: false,
-      message: "Vendor account not found.",
-    };
-  }
-
   const { error } = await supabase
     .from("listings")
     .delete()
     .eq("id", listing_id)
-    .eq("vendor_id", vendor.id);
+    .eq("vendor_id", vendorId);
 
   if (error) {
     console.error("Error deleting vendor listing:", error);
@@ -278,5 +250,106 @@ export async function deleteVendorListing(
   return {
     success: true,
     message: "Listing deleted successfully.",
+  };
+}
+
+export async function addVendorGalleryImage(
+  _prevState: VendorDashboardFormState,
+  formData: FormData
+): Promise<VendorDashboardFormState> {
+  const { supabase, vendorId } = await getCurrentVendorId();
+
+  if (!vendorId) {
+    return {
+      success: false,
+      message: "Vendor account not found.",
+    };
+  }
+
+  const image_url = String(formData.get("image_url") ?? "").trim();
+  const alt_text = String(formData.get("alt_text") ?? "").trim();
+  const sortOrderValue = String(formData.get("sort_order") ?? "").trim();
+  const is_featured = String(formData.get("is_featured") ?? "") === "on";
+
+  if (!image_url) {
+    return {
+      success: false,
+      message: "Image URL is required.",
+    };
+  }
+
+  const sort_order =
+    sortOrderValue.length > 0 && !Number.isNaN(Number(sortOrderValue))
+      ? Number(sortOrderValue)
+      : 0;
+
+  const { error } = await supabase.from("vendor_images").insert({
+    vendor_id: vendorId,
+    image_url,
+    alt_text: alt_text || null,
+    sort_order,
+    is_featured,
+  });
+
+  if (error) {
+    console.error("Error adding vendor gallery image:", error);
+    return {
+      success: false,
+      message: "Could not add gallery image right now.",
+    };
+  }
+
+  revalidatePath("/vendor/dashboard");
+
+  return {
+    success: true,
+    message: "Gallery image added successfully.",
+  };
+}
+
+export async function saveVendorOpeningHours(
+  _prevState: VendorDashboardFormState,
+  formData: FormData
+): Promise<VendorDashboardFormState> {
+  const { supabase, vendorId } = await getCurrentVendorId();
+
+  if (!vendorId) {
+    return {
+      success: false,
+      message: "Vendor account not found.",
+    };
+  }
+
+  const rows = Array.from({ length: 7 }).map((_, day) => {
+    const isClosed = String(formData.get(`is_closed_${day}`) ?? "") === "on";
+    const open_time = String(formData.get(`open_time_${day}`) ?? "").trim();
+    const close_time = String(formData.get(`close_time_${day}`) ?? "").trim();
+
+    return {
+      vendor_id: vendorId,
+      day_of_week: day,
+      is_closed: isClosed,
+      open_time: isClosed ? null : open_time || null,
+      close_time: isClosed ? null : close_time || null,
+    };
+  });
+
+  const { error } = await supabase
+    .from("vendor_opening_hours")
+    .upsert(rows, { onConflict: "vendor_id,day_of_week" });
+
+  if (error) {
+    console.error("Error saving vendor opening hours:", error);
+    return {
+      success: false,
+      message: "Could not save opening hours right now.",
+    };
+  }
+
+  revalidatePath("/vendor/dashboard");
+
+  return {
+    success: true,
+    message: "Opening hours saved successfully.",
   };
 }

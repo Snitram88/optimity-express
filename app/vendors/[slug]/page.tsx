@@ -50,6 +50,24 @@ function renderStars(rating: number) {
   return "★".repeat(rating) + "☆".repeat(5 - rating);
 }
 
+function formatHour(time: string | null) {
+  if (!time) return null;
+  return new Intl.DateTimeFormat("en-NG", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(`1970-01-01T${time}`));
+}
+
+const dayNames = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 export default async function VendorPage({ params }: VendorPageProps) {
   const { slug } = await params;
   const vendor = await getVendorBySlug(slug);
@@ -226,6 +244,38 @@ export default async function VendorPage({ params }: VendorPageProps) {
 
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                Gallery
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                Business gallery
+              </h2>
+
+              {vendor.galleryImages.length > 0 ? (
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  {vendor.galleryImages.map((image) => (
+                    <div
+                      key={image.id}
+                      className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50"
+                    >
+                      <div className="aspect-[4/3] bg-slate-200">
+                        <img
+                          src={image.image_url}
+                          alt={image.alt_text ?? vendor.business_name}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
+                  No gallery images published yet.
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
                 Reviews
               </p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
@@ -356,6 +406,36 @@ export default async function VendorPage({ params }: VendorPageProps) {
                 >
                   WhatsApp
                 </a>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Opening hours
+              </h2>
+
+              <div className="mt-4 space-y-3 text-sm text-slate-600">
+                {vendor.openingHours.length > 0 ? (
+                  vendor.openingHours.map((row) => (
+                    <div
+                      key={row.id}
+                      className="flex items-center justify-between gap-4"
+                    >
+                      <span className="font-medium text-slate-900">
+                        {dayNames[row.day_of_week]}
+                      </span>
+                      <span>
+                        {row.is_closed
+                          ? "Closed"
+                          : `${formatHour(row.open_time)} - ${formatHour(
+                              row.close_time
+                            )}`}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p>No opening hours available yet.</p>
+                )}
               </div>
             </div>
 

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
+import { VendorGalleryForm } from "@/components/forms/vendor-gallery-form";
+import { VendorHoursForm } from "@/components/forms/vendor-hours-form";
 import { VendorListingForm } from "@/components/forms/vendor-listing-form";
 import { VendorListingManager } from "@/components/forms/vendor-listing-manager";
 import { VendorProfileForm } from "@/components/forms/vendor-profile-form";
@@ -46,7 +48,7 @@ export default async function VendorDashboardPage() {
                 {dashboard.vendor.business_name}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Manage your profile, catalogue, reviews, and business performance.
+                Manage your profile, catalogue, gallery, opening hours, reviews, and business performance.
               </p>
             </div>
 
@@ -66,7 +68,7 @@ export default async function VendorDashboardPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <p className="text-sm text-slate-500">Total listings</p>
             <p className="mt-3 text-3xl font-bold text-slate-900">
@@ -92,6 +94,13 @@ export default async function VendorDashboardPage() {
             <p className="text-sm text-slate-500">Average rating</p>
             <p className="mt-3 text-3xl font-bold text-slate-900">
               {dashboard.metrics.averageRating ?? "-"}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-sm text-slate-500">Gallery images</p>
+            <p className="mt-3 text-3xl font-bold text-slate-900">
+              {dashboard.metrics.galleryImages}
             </p>
           </div>
         </section>
@@ -124,6 +133,32 @@ export default async function VendorDashboardPage() {
                   categories={categories}
                   subcategories={subcategories}
                 />
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                Gallery
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                Manage your vendor gallery
+              </h2>
+
+              <div className="mt-6">
+                <VendorGalleryForm images={dashboard.galleryImages} />
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
+                Opening Hours
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
+                Set your business schedule
+              </h2>
+
+              <div className="mt-6">
+                <VendorHoursForm hours={dashboard.openingHours} />
               </div>
             </div>
 
