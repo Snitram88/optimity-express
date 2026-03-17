@@ -20,8 +20,13 @@ export async function vendorPasswordLogin(formData: FormData) {
 
   if (error) {
     console.error("Vendor login error:", error);
+
+    if (error.code === "email_not_confirmed") {
+      redirect("/vendors/login?error=Please%20confirm%20your%20email%20before%20logging%20in");
+    }
+
     redirect("/vendors/login?error=Invalid%20email%20or%20password");
   }
 
-  redirect("/");
+  redirect("/vendor/dashboard");
 }

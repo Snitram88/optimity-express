@@ -1,18 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { VendorDashboardSections } from "@/components/dashboard/vendor-dashboard-sections";
 import { PageContainer } from "@/components/layout/page-container";
 import { SiteHeader } from "@/components/layout/site-header";
-import { VendorGalleryForm } from "@/components/forms/vendor-gallery-form";
-import { VendorHoursForm } from "@/components/forms/vendor-hours-form";
-import { VendorListingForm } from "@/components/forms/vendor-listing-form";
-import { VendorListingManager } from "@/components/forms/vendor-listing-manager";
-import { VendorProfileForm } from "@/components/forms/vendor-profile-form";
 import { getCurrentVendorDashboard } from "@/services/vendor-dashboard/get-current-vendor-dashboard";
 import { getCategoryOptions } from "@/services/categories/get-category-options";
-
-function renderStars(rating: number) {
-  return "★".repeat(rating) + "☆".repeat(5 - rating);
-}
 
 export default async function VendorDashboardPage() {
   const supabase = await createClient();
@@ -48,7 +40,7 @@ export default async function VendorDashboardPage() {
                 {dashboard.vendor.business_name}
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Manage your profile, catalogue, gallery, opening hours, reviews, and business performance.
+                Manage your profile, listings, gallery, hours, reviews, and business performance with a cleaner workspace.
               </p>
             </div>
 
@@ -106,127 +98,25 @@ export default async function VendorDashboardPage() {
         </section>
 
         <section className="mt-8 grid gap-8 lg:grid-cols-3">
-          <div className="space-y-8 lg:col-span-2">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Profile
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                Edit your business profile
-              </h2>
-
-              <div className="mt-6">
-                <VendorProfileForm vendor={dashboard.vendor} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                New Listing
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                Add a new product or service
-              </h2>
-
-              <div className="mt-6">
-                <VendorListingForm
-                  categories={categories}
-                  subcategories={subcategories}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Gallery
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                Manage your vendor gallery
-              </h2>
-
-              <div className="mt-6">
-                <VendorGalleryForm images={dashboard.galleryImages} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Opening Hours
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                Set your business schedule
-              </h2>
-
-              <div className="mt-6">
-                <VendorHoursForm hours={dashboard.openingHours} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Manage Listings
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                Edit or delete existing listings
-              </h2>
-
-              <div className="mt-6">
-                <VendorListingManager listings={dashboard.listings} />
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Reviews
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">
-                Recent customer reviews
-              </h2>
-
-              <div className="mt-6 space-y-4">
-                {dashboard.reviews.length > 0 ? (
-                  dashboard.reviews.map((review) => (
-                    <article
-                      key={review.id}
-                      className="rounded-3xl border border-slate-200 bg-slate-50 p-5"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {review.reviewer_name}
-                          </p>
-                          <p className="mt-1 text-amber-500">
-                            {renderStars(review.rating)}
-                          </p>
-                        </div>
-                        <p className="text-xs text-slate-500">
-                          {new Intl.DateTimeFormat("en-NG", {
-                            dateStyle: "medium",
-                          }).format(new Date(review.created_at))}
-                        </p>
-                      </div>
-
-                      <p className="mt-4 text-sm leading-7 text-slate-600">
-                        {review.review_text ?? "No written review provided."}
-                      </p>
-                    </article>
-                  ))
-                ) : (
-                  <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center text-sm text-slate-600">
-                    No approved reviews yet.
-                  </div>
-                )}
-              </div>
-            </div>
+          <div className="lg:col-span-2">
+            <VendorDashboardSections
+              vendor={dashboard.vendor}
+              categories={categories}
+              subcategories={subcategories}
+              listings={dashboard.listings}
+              galleryImages={dashboard.galleryImages}
+              openingHours={dashboard.openingHours}
+              reviews={dashboard.reviews}
+            />
           </div>
 
           <aside className="space-y-8">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-600">
-                Status
+                Account Overview
               </p>
               <h2 className="mt-2 text-xl font-bold tracking-tight text-slate-900">
-                Account overview
+                Quick business summary
               </h2>
 
               <div className="mt-6 space-y-4 text-sm text-slate-600">
